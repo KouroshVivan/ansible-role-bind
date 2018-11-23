@@ -14,6 +14,7 @@
     that: bind_zone_master_server_ip is defined
 
 - name: Install BIND
+  become: true
   package:
     pkg: "{{ item }}"
     state: present
@@ -22,6 +23,7 @@
   tags: bind
 
 - name: Ensure runtime directories referenced in config exist
+  become: true
   file:
     path: "{{ item }}"
     state: directory
@@ -55,7 +57,38 @@
     forward_hashes: "{{ forward_hashes|default([]) + [ {'hash': item.stdout|default(), 'name': item.item.name} ] }}"
   with_items:
     - "{{ forward_hashes_temp.results }}"
+  run_once: true
 
+- name: Show bind_zone_domains
+  debug:
+    msg: "{{ bind_zone_domains }}"
+
+- name: Generate inventory name and ip list
+  set_fact:
+    inventory_hosts_name_ip: "{{ inventory_hosts_name_ip|default([]) + [{'name': hostvars[item].inventory_hostname, 'ip': hostvars[item].ansible_host}] }}"
+  with_items:
+    - "{{ groups['all'] }}"
+  run_once: true
+
+- name: Show bind_zone_domains items
+  debug:
+    msg: "{{ item }}"
+  with_items:
+    - "{{ bind_zone_domains }}"
+
+- name: Put inventory in bind_zone_domains
+  set_fact:
+    bind_zone_domains: "{{ bind_zone_domains|difference([item])  + [item|combine({'hosts': inventory_hosts_name_ip + item.hosts|default([])})] }}"
+  with_items:
+    - "{{ bind_zone_domains }}"
+  when:
+    - item.use_inventory_host is defined
+    - item.use_inventory_host
+  run_once: true
+
+- name: After bind_zone_domains
+  debug:
+    msg: "{{ bind_zone_domains }}"
 
 - name: Read reverse ipv4 zone hashes
   shell: "grep -s \"^; Hash:\" {{ bind_zone_dir }}/{{ ('.'.join(item.1.replace(item.1+'.','').split('.')[::-1])) }}.in-addr.arpa || true"
@@ -102,6 +135,7 @@
   when: bind_zone_master_server_ip not in ansible_all_ipv4_addresses
 
 - name: Start BIND service
+  become: true
   service:
     name: "{{ bind_service }}"
     state: started

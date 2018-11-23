@@ -10,6 +10,11 @@ acl "{{ acl.name }}" {
 };
 
 {% endfor %}
+controls {
+{% for bindip in bind_rndc_listen_ipv4 %}
+  inet {{ bindip }} port {{ bind_rndc_port }} allow { {{ bind_rndc_allow_ipv4|join(';') }}; };
+{% endfor %}
+};
 options {
   listen-on port 53 { {{ bind_listen_ipv4|join(';') }}; };
   listen-on-v6 port 53 { {{ bind_listen_ipv6|join(';') }}; };
@@ -70,6 +75,9 @@ logging {
 include "{{ file }}";
 {% endfor %}
 {% for file in bind_extra_include_files %}
+include "{{ file }}";
+{% endfor %}
+{% for file in bind_rndc_key_files %}
 include "{{ file }}";
 {% endfor %}
 

@@ -2,6 +2,7 @@
 ---
 
 - name: reload bind
+  become: true
   service:
     name: "{{ bind_service }}"
     state: reloaded

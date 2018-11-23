@@ -3,6 +3,7 @@
 ---
 
 - name: Master | Main BIND config file (master)
+  become: true
   template:
     src: master_etc_named.conf.j2
     dest: "{{ bind_config }}"
@@ -15,6 +16,7 @@
   tags: bind
 
 - name: Master | Create forward lookup zone file
+  become: true
   template:
     src: bind_zone.j2
     dest: "{{ bind_zone_dir }}/{{ item.name }}"
@@ -29,6 +31,7 @@
   tags: bind
 
 - name: Master | Create reverse lookup zone file
+  become: true
   template:
     src: reverse_zone.j2
     dest: "{{ bind_zone_dir }}/{{ ('.'.join(item.1.replace(item.1+'.','').split('.')[::-1])) }}.in-addr.arpa"
@@ -46,6 +49,7 @@
   tags: bind
 
 - name: Master | Create reverse IPv6 lookup zone file
+  become: true
   template:
     src: reverse_zone_ipv6.j2
     dest: "{{bind_zone_dir}}/{{ (item.1 | ipaddr('revdns'))[-(9+(item.1|regex_replace('^.*/','')|int)//2):-1] }}"

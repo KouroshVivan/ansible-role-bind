@@ -3,6 +3,7 @@
 ---
 
 - name: Slave | Main BIND config file (slave)
+  become: true
   template:
     src: slave_etc_named.conf.j2
     dest: "{{ bind_config }}"
